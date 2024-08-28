@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Include the Web3 library -->
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <!-- Include the jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        input[type="password"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 10px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button, .btn {
+            background-color: #04AA6D;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover, .btn:hover {
+            background-color: #045a39;
+        }
+    </style>
+    <title>Create a Wallet</title>
+</head>
+
+<body>
+    <h1>Create a Wallet</h1>
+    <button id="createWalletButton">Create Wallet</button>
+    <br/><br/>
+    <input type="password" id="password" placeholder="Enter a password for the Key Store">
+    <br/><br/>
+
+    <label for="walletAddress">Wallet Address:</label>
+    <br/>
+    <textarea id="walletAddress" rows="5" cols="150"></textarea>
+    <br/>
+    <label for="privateKey">Private Key:</label>
+    <br/>
+    <textarea id="privateKey" rows="10" cols="150"></textarea>
+    <br/>
+    <label for="keystore">Keystore File:</label>
+    <br/>
+    <textarea id="keystore" rows="10" cols="150"></textarea>
+    <br/><br/>
+    <a class="btn" id="downloadKeystore" download="wallet.json">Download Keystore</a>
+
+    <script>
+        $(document).ready(function() {
+            $("#createWalletButton").click(function() {
+
+                // Alert if the password is empty
+                var password = $("#password").val();
+                if (password === "") {
+                    alert("Please enter a password for the Key Store");
+                    return;
+                }
+
+                // Create a new Web3 instance
+                var web3 = new Web3();
+
+                // Create a new wallet
+                var wallet = web3.eth.accounts.create();
+
+                // Insert the wallet address into the text area
+                $("#walletAddress").val(wallet.address);
+
+                // Display the private key
+                $("#privateKey").val(wallet.privateKey);
+
+                // Display the keystore file
+                var keystore = web3.eth.accounts.encrypt(wallet.privateKey, password);
+                $("#keystore").val(JSON.stringify(keystore));
+
+                // Prepare the keystore for download
+                var keystoreData = new Blob([JSON.stringify(keystore)], { type: 'application/json' });
+                var keystoreUrl = URL.createObjectURL(keystoreData);
+                $("#downloadKeystore").attr('href', keystoreUrl);
+            });
+        });
+    </script>
+</body>
+</html>

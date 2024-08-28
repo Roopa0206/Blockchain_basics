@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Include the Web3 library -->
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <!-- Include the jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Include your CSS file -->
+    <!--<link rel="stylesheet" href="./sendTransaction.css">-->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 10px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button, .btn {
+            background-color: #04AA6D;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover, .btn:hover {
+            background-color: #045a39;
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 5px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+    <title>Decrypt a wallet</title>
+</head>
+<body>
+    <h1>Load Wallet and Send a Transaction</h1>
+    <button id="loadWalletButton">Load Wallet</button>
+    <!-- Ask for a wallet password -->
+    <input type="password" id="password" placeholder="Enter a password for the Key Store">
+    <!-- Select a wallet json file from the file system -->
+    <input type="file" id="keystoreFile" accept=".json">
+    <br/><br/>
+
+    <label for="walletAddress">Wallet Address:</label>
+    <textarea id="walletAddress" rows="5" cols="30"></textarea>
+    <br/>
+    <label for="privateKey">Private Key:</label>
+    <textarea id="privateKey" rows="5" cols="50"></textarea>
+    <br/>
+    <label for="keystore">Keystore File:</label>
+    <textarea id="keystore" rows="5" cols="50"></textarea>
+    
+    <br/>
+    <label for="checkCounter">Check the counter on <a href="https://sepolia.etherscan.io/address/0x0075a2ea2e3a31b96bd3f5a9d177f54a15616f08" >0x0075a2ea2e3a31b96bd3f5a9d177f54a15616f08</a></label>
+    <br/>
+    <button id="checkCounterButton">Check Counter</button>
+    <br/>
+    <label id="checkCounter">Current Value: </label>
+    <br/>
+    <h3>Increment the counter on <a href="https://sepolia.etherscan.io/address/0x0075a2ea2e3a31b96bd3f5a9d177f54a15616f08" >0x0075a2ea2e3a31b96bd3f5a9d177f54a15616f08</a></h3>
+    <br/>
+    <button id="incrementCounterButton">Increment Counter</button>
+    <br/>
+
+    <!-- Put the transaction request details here -->
+    <label for="transactionRequest">Transaction Request: </label>
+    <textarea id="transactionRequest" rows="5" cols="50"></textarea>
+    <br/>
+    <!-- Put the transaction result details here -->
+    <label for="transactionResult">Transaction Result: </label>
+    <textarea id="transactionResult" rows="5" cols="50"></textarea>
+
+    <br/><br/><br/>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <span id="closeModal" class="close">&times;</span>
+            <p id="errorMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        // Create a new web3 instance connected to Sepolia
+        var web3 = new Web3("https://rpc2.sepolia.org");
+
+        $("#loadWalletButton").click(function() {
+            // Return if no password is entered
+            if ($("#password").val() === "") {
+                $("#errorMessage").text("Please enter a password");
+                $("#errorModal").css("display", "block");
+                return;
+            }
+
+            // Load the contents of the file
+            var file = $("#keystoreFile")[0].files[0];
+            // Return if no file is selected
+            if (!file) {
+                $("#errorMessage").text("Please select a file");
+                $("#errorModal").css("display", "block");
+                return;
+            }
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var keystore = e.target.result;
+                var password = $("#password").val();
+                try {
+                    // Decrypt the wallet
+                    var wallet = web3.eth.accounts.decrypt(keystore, password);
+                    // Display the wallet address
+                    $("#walletAddress").val(wallet.address);
+                    // Display the private key
+                    $("#privateKey").val(wallet.privateKey);
+                    // Display the keystore
+                    $("#keystore").val(keystore);
+                } catch (error) {
+                    $("#errorMessage").text(error.message);
+                    $("#errorModal").css("display", "block");
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        $("#checkCounterButton").click(function() {
+            // Check the value in "counter" variable of the contract
+            var contractAddress = "0x0075a2ea2e3a31b96bd3f5a9d177f54a15616f08";
+            var contract = new web3.eth.Contract(ABI, contractAddress);
+            contract.methods.counter().call().then(function(result) {
+                $("#checkCounter").text("Current Value: " + result);
+            }).catch(function(error) {
+                $("#errorMessage").text("Error fetching counter: " + error.message);
+                $("#errorModal").css("display", "block");
+            });
+        });
+
+        $("#incrementCounterButton").click(function() {
+            // Increment the value in "counter" variable of the contract by sending a signed transaction using the private key
+            var privateKey = $("#privateKey").val();
+
+            if (privateKey === "") {
+                $("#errorMessage").text("Please enter a private key");
+                $("#errorModal").css("display", "block");
+                return;
+            }
+
+            var wallet = web3.eth.accounts.privateKeyToAccount(privateKey);
+            var contractAddress = "0x0075a2ea2e3a31b96bd3f5a9d177f54a15616f08";
+            var contract = new web3.eth.Contract(ABI, contractAddress);
+            var transaction = contract.methods.incrementCounter();
+            var encodedABI = transaction.encodeABI();
+            var tx = {
+                from: wallet.address,
+                to: contractAddress,
+                gas: 2000000,
+                data: encodedABI
+            };
+
+            web3.eth.accounts.signTransaction(tx, privateKey).then(function(signedTx) {
+                web3.eth.sendSignedTransaction(signedTx.rawTransaction).on('receipt', function(receipt) {
+                    $("#transactionRequest").val(JSON.stringify(tx));
+                    $("#transactionResult").val(JSON.stringify(receipt));
+                }).on('error', function(error) {
+                    $("#errorMessage").text("Error sending transaction: " + error.message);
+                    $("#errorModal").css("display", "block");
+                });
+            }).catch(function(error) {
+                $("#errorMessage").text("Error signing transaction: " + error.message);
+                $("#errorModal").css("display", "block");
+            });
+        });
+
+        // ABI of the contract
+        const ABI = [
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "contractName",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "counter",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "name": "name",
+                        "type": "string"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "constant": false,
+                "inputs": [],
+                "name": "incrementCounter",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [],
+                "name": "decrementCounter",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
+    </script>
+</body>
+</html>
